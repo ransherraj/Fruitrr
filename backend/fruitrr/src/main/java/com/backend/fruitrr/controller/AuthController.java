@@ -4,9 +4,11 @@ package com.backend.fruitrr.controller;
 import com.backend.fruitrr.model.Role;
 import com.backend.fruitrr.model.User;
 import com.backend.fruitrr.payload.LoginRequest;
-import com.backend.fruitrr.payload.LoginResponse;
+import com.backend.fruitrr.response.LoginResponse;
 import com.backend.fruitrr.payload.SignUpRequest;
 import com.backend.fruitrr.repository.UserRepository;
+import com.backend.fruitrr.response.ResponseData;
+import com.backend.fruitrr.response.SignUpResponse;
 import com.backend.fruitrr.security.JwtTokenProvider;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,33 +32,56 @@ public class AuthController {
     private JwtTokenProvider tokenProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseData<LoginResponse> authenticateUser(@RequestBody LoginRequest loginRequest) {
+
         User user = userRepository.findByUsername(loginRequest.getUsername());
         if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Invalid username or password");
+            ResponseData<LoginResponse> res = new ResponseData<>(false, "Invalid username or password", Collections.emptyList(), 401, 0);
+            /*res.Message="Invalid username or password";
+            res.StatusCode=401;
+            res.IsSuccess=false;
+            res.Entity=null;*/
+            return res;
         }
 
         String token = tokenProvider.generateToken(user);
         user.setToken(token);
         userRepository.save(user);
 
-        return ResponseEntity.ok(new LoginResponse(token));
+        ResponseData<LoginResponse> res = new ResponseData<>(true, "Login Successful", Collections.emptyList(), 200, 1, new LoginResponse(token));
+        /*res.StatusCode=200;
+        res.Entity = new LoginResponse(token);
+        res.Message="Login Successful";
+        res.IsSuccess=true;*/
+        //res.Token = new LoginResponse(token);
+        return res;
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseData<SignUpResponse> registerUser(@RequestBody SignUpRequest signUpRequest) {
+
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity.badRequest().body("Username is already taken!");
+            ResponseData<SignUpResponse> res = new ResponseData<>(false, "Username is already taken!", Collections.emptyList(), 401, 0);
+            /*res.Message="Username is already taken!";
+            res.StatusCode=401;
+            res.IsSuccess=false;
+            res.Entity=null;*/
+            return res;
         }
 
         User user = new User();
         user.setUsername(signUpRequest.getUsername());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         user.setEmail(signUpRequest.getEmail());
-        user.setRoles(Collections.singletonList(new Role(null, "ROLE_USER")));
+        //user.setRoles(Collections.singletonList(new Role(null, "ROLE_USER")));
 
         userRepository.save(user);
 
-        return ResponseEntity.ok("User registered successfully");
+        ResponseData<SignUpResponse> res = new ResponseData<>(true, "User registered successfully", Collections.emptyList(), 200, 0);
+
+        /*res.StatusCode=200;
+        res.Message="User registered successfully";
+        res.IsSuccess=true;*/
+        return res;
     }
 }

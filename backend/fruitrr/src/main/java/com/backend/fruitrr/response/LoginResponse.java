@@ -1,4 +1,4 @@
-package com.backend.fruitrr.payload;
+package com.backend.fruitrr.response;
 
 
 import lombok.AllArgsConstructor;
